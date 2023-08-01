@@ -104,12 +104,21 @@ def savePosts(resultsJson, query):
 		if 'ad_creative_bodies' in result:
 			data['ad_creative_bodies'] = ' '.join(result['ad_creative_bodies'])
 
+		if 'ad_creative_link_captions' in result:
+			data['ad_creative_link_captions'] = str(result['ad_creative_link_captions'])
+
+		if 'ad_creative_link_descriptions' in result:
+			data['ad_creative_link_descriptions'] = str(result['ad_creative_link_descriptions'])
+
+		if 'ad_creative_link_titles' in result:
+			data['ad_creative_link_titles'] = str(result['ad_creative_link_titles'])
+
 		if 'ad_delivery_start_time' in result:
 			data['ad_delivery_start_time'] = result['ad_delivery_start_time']
 		
 		if 'ad_delivery_stop_time' in result:
 			data['ad_delivery_stop_time'] = result['ad_delivery_stop_time']
-	
+
 		if 'bylines' in result:
 			data['bylines'] = result['bylines']
 		
@@ -123,7 +132,8 @@ def savePosts(resultsJson, query):
 				data['impressions_lower'] = result['impressions']['lower_bound']
 			if 'upper_bound' in result['impressions']: 	
 				data['impressions_upper'] = result['impressions']['upper_bound']
-		data['ad_snapshot_url'] = result['ad_snapshot_url']
+
+		data['ad_snapshot_url'] = f"https://www.facebook.com/ads/library/?id={result['id']}"
 	
 		if 'demographic_distribution' in result:
 			demos = getDemos(result['demographic_distribution'])
@@ -155,7 +165,7 @@ def savePosts(resultsJson, query):
 def getPosts(query,since):
 	print(f"Getting ads related to {query}")
 
-	url = f"https://graph.facebook.com/v17.0/ads_archive?access_token={key}&fields=id,page_id,page_name,ad_creative_bodies,ad_delivery_start_time,ad_delivery_stop_time,bylines,demographic_distribution,spend,currency,delivery_by_region,impressions,ad_snapshot_url&aad_type=POLITICAL_AND_ISSUE_ADS&ad_reached_countries=[%27AU%27]&limit=200&ad_delivery_date_min={since}&search_terms='{query}'"
+	url = f"https://graph.facebook.com/v17.0/ads_archive?access_token={key}&fields=id,page_id,page_name,ad_creative_bodies,ad_creative_link_captions,ad_creative_link_descriptions,ad_creative_link_titles,ad_delivery_start_time,ad_delivery_stop_time,bylines,demographic_distribution,spend,currency,delivery_by_region,impressions,ad_snapshot_url&aad_type=POLITICAL_AND_ISSUE_ADS&ad_reached_countries=[%27AU%27]&limit=200&ad_delivery_date_min={since}&search_terms='{query}'"
 
 	print(url)
 	global queryCount

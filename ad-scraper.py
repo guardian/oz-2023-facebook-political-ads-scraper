@@ -107,8 +107,17 @@ def savePosts(resultsJson, pageID):
 		if 'ad_delivery_start_time' in result:
 			data['ad_delivery_start_time'] = result['ad_delivery_start_time']
 		
+		if 'ad_creative_link_captions' in result:
+			data['ad_creative_link_captions'] = result['ad_creative_link_captions']
+
+		if 'ad_creative_link_descriptions' in result:
+			data['ad_creative_link_descriptions'] = result['ad_creative_link_descriptions']
+
 		if 'ad_delivery_stop_time' in result:
 			data['ad_delivery_stop_time'] = result['ad_delivery_stop_time']
+
+		if 'ad_creative_link_titles' in result:
+			data['ad_creative_link_titles'] = result['ad_creative_link_titles']	
 	
 		if 'bylines' in result:
 			data['bylines'] = result['bylines']
@@ -154,7 +163,7 @@ def savePosts(resultsJson, pageID):
 
 def getPosts(pageID,since):
 	print("Getting", pageID)
-	query = f'https://graph.facebook.com/v17.0/ads_archive?access_token={key}&fields=id,page_id,page_name,ad_creative_bodies,ad_delivery_start_time,ad_delivery_stop_time,bylines,demographic_distribution,spend,currency,delivery_by_region,impressions,ad_snapshot_url&search_page_ids={pageID}&aad_type=POLITICAL_AND_ISSUE_ADS&ad_reached_countries=[%27AU%27]&limit=2000&ad_delivery_date_min={since}'
+	query = f'https://graph.facebook.com/v17.0/ads_archive?access_token={key}&fields=id,page_id,page_name,ad_creative_bodies,ad_creative_link_captions,ad_creative_link_descriptions,ad_creative_link_titles,ad_delivery_start_time,ad_delivery_stop_time,bylines,demographic_distribution,spend,currency,delivery_by_region,impressions,ad_snapshot_url&search_page_ids={pageID}&aad_type=POLITICAL_AND_ISSUE_ADS&ad_reached_countries=[%27AU%27]&limit=2000&ad_delivery_date_min={since}'
 	print(query)
 	global queryCount
 	queryCount += 1

@@ -4,7 +4,7 @@ def vaccuum():
 	con.execute("VACUUM")
 	con.close()
 
-# vaccuum() 
+vaccuum() 
 
 import scraperwiki
 import time
@@ -18,4 +18,4 @@ def fixadURLS():
 		scraperwiki.sqlite.save(unique_keys=["ad_id"], data=row, table_name="ads_by_query")
 		time.sleep(0.1)
 
-fixadURLS()		
+# fixadURLS()		
