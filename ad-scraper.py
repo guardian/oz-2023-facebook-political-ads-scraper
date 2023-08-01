@@ -208,6 +208,7 @@ pages = ['102329728050606', '104180525925926', '117806591312470', '1622506634677
 
 # 292602604891 - Josh Frydenberg
 
+# https://www.facebook.com/ads/library/?id=992360535298100
 
 for x in range(upto, len(pages)):
  	print("Upto", x)
