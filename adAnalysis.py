@@ -25,9 +25,9 @@ checkWords = ['parliament',
               'treaty',
               'recognition',
               'yes23',
-              'thomas mayo', # thomas mayo
+              'thomas mayo', # supports yes, but in no attack ads
               'mayo',
-              'teela reid', # teela reid
+              'teela reid', # supports yes, but in no attack ads
               'reid',
               'labor',
               'first nations',
@@ -35,9 +35,9 @@ checkWords = ['parliament',
               'voteno',
               'voteyes',
               'noel pearson',
-              'jacinta', #jacinta price
-              'jacinta price',
-              'mundine', # warren mundine
+              'jacinta', # no, jacinta price
+              'jacinta price', # no
+              'mundine', # no, warren mundine
               'warren mundine', # no
               "Kerry O'Brien", # yes
               'Shireen Morris', # yes
