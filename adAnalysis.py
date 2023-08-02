@@ -46,16 +46,17 @@ checkWords = ['parliament',
               'Marcus Stewart', # yes
               'Eddie Synot', # yes
               'Megan Davis', # yes 
-              'racist'
+              'racist',
+              'uluru'
               ]
 
 
 
-fromPages = ['102329728050606', #yes23
-             '104180525925926', #fair australia
-             '117806591312470', #not enough
+fromPages = ['102329728050606', # yes23
+             '104180525925926', # fair australia
+             '117806591312470', # not enough
              '1622506634677043', # Senator Jacinta Nampijinpa Price
-             '113998151684022', #referendum news
+             '113998151684022', # referendum news
              '363375540400009', #linda burney
              '102292348146435', # The Uluru Statement from the Heart
              '103072892843066', # not my voice
@@ -63,15 +64,27 @@ fromPages = ['102329728050606', #yes23
              '109657605474040', # multicultural voices against the voice
              '131283957610666', # AJA
              '117058357932949', # constitutional equality
+             '1407150000000000', # empowered communities
+             '102330000000000' # From the heart
              ]
 
 # News and other pages that are by definition 'neutral'
 
 neutralPages = [
-     '8013404017', #Crikey
+     '8013404017', # Crikey
      '110627000000000' # Australian government
 ]
 
+# Yes pages
+
+
+# No pages
+
+# Exclude entirely
+
+excludes = [
+    '425488000000000', # First Peoples' Assembly of Victoria will show up with our classifier but ads relate to Vic-specific treaty negotiations
+]
 
 # Page name is actually the easiest identifier for whether an ad will be yes, no or neutral on the voice
 
