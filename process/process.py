@@ -18,10 +18,25 @@ nlp = spacy.load('en_core_web_sm')
 from spacy.matcher import PhraseMatcher
 phrase_matcher = PhraseMatcher(nlp.vocab)
 
+# from transformers import pipeline
+# ## Zero shot classifer
+# classifier = pipeline("zero-shot-classification",
+#                       model="facebook/bart-large-mnli")
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from transformers import pipeline
-## Zero shot classifer
-classifier = pipeline("zero-shot-classification",
-                      model="facebook/bart-large-mnli")
+
+classifier = pipeline("text-classification", model="Joshnicholas/ad-classifier")
+
+# %%
+
+print(classifier(""""Launceston is not just a city; it is our home, our community, and the place we all share. As your potential Mayor, I firmly believe that every resident deserves to be heard, respected, and represented. I am committed to fostering an inclusive environment where everyone's opinions, ideas, and aspirations matter.
+
+Your voice and your vote has the power to shape the future of our city. Let's do this together.
+
+#timetovotecityoflaunceston"""))
+
+# %%
 
 # %%
 ### Need to infer the yes/no stances from the labelled data
@@ -67,27 +82,25 @@ for addo in advertisers:
         inter = inter.loc[inter['voice_ad'] == 1].copy()
         side = inter['side'].tolist()
 
-        counter = Counter(side)
-        siddo = counter.most_common(1)
+        # counter = Counter(side)
+        # siddo = counter.most_common(1)
+        side_set = list(set(side))
 
-        if (len(side) == 0) or (siddo[0][0] == np.nan) or (siddo[0][0] == "nan"):
+        if (len(side_set) == 0) or (side_set[0] == np.nan) or (side_set[0] == "nan"):
             no_stance_taken.append(addo)
             stance_dicto[addo] = 'neutral'   
-        # else:
-        #     print(siddo[0][0])
 
-        elif siddo[0][0].lower() == "neutral":
+        elif "neutral" in side_set:
             no_stance_taken.append(addo)     
-            stance_dicto[addo] = 'neutral'   
+            stance_dicto[addo] = 'neutral' 
 
-        elif siddo[0][0].lower() == "no":
+        elif "no" in side_set:
             no_campaign.append(addo)
             stance_dicto[addo] = 'no'   
         
-        elif siddo[0][0].lower() == "yes":
+        elif "yes" in side_set:
             yes_campaign.append(addo)
             stance_dicto[addo] = 'yes'   
-
         else:
             other.append(addo)
             stance_dicto[addo] = 'other'
@@ -96,15 +109,15 @@ for addo in advertisers:
         other.append(addo)
         stance_dicto[addo] = 'other'   
 
-# print("yes_campaign = ", yes_campaign)
-# print("no_campaign = ", no_campaign)
-# print("no_stance_taken = ", no_stance_taken)
-# print("other = ", other)
+print("yes_campaign = ", yes_campaign)
+print("no_campaign = ", no_campaign)
+print("no_stance_taken = ", no_stance_taken)
+print("other = ", other)
 
-# print("len(yes_campaign): ", len(yes_campaign))
-# print("len(no_campaign): ", len(no_campaign))
-# print("len(no_stance_taken): ", len(no_stance_taken))
-# print("len(other): ", len(other))
+print("len(yes_campaign): ", len(yes_campaign))
+print("len(no_campaign): ", len(no_campaign))
+print("len(no_stance_taken): ", len(no_stance_taken))
+print("len(other): ", len(other))
 
 
 # yes_campaign =  ['Amanda Rishworth MP', 'Andrea Michaels MP', 'Andrew Charlton MP', 'Andrew Leigh MP', 'Anika Wells MP', 'ANTAR', 'Australian Unions', 'Bathurst For Yes', 'Bill Shorten', 'Brian Mitchell MP - Federal Member for Lyons', 'Brittany Lauga MP', 'Central Land Council', 'ChangeMakers', 'City of Sydney', 'Corrine McMillan MP - State Member for Mansfield', 'Councillor Jared Cassidy', 'Daniel Mulino', 'Dr Katrina Stratton MLA', 'Dr Michelle Ananda-Rajah MP', 'Dr Monique Ryan', 'Ed Husic MP', 'Edmond Atalla MP', 'Empowered Communities', 'First Nations LGBTQ Elders Coalition', 'From the Heart', 'Gen united', 'GetUp!', 'Independent Education Union of Australia NSW / ACT Branch', 'Indian Link', 'Instagram User 233713112', 'Jason Yat-sen Li MP', 'Jennifer Howard MP', 'Jerome Laxale MP', 'Justine Elliot MP', 'Kristy McBain', 'Matt Keogh', 'Murray Watt - Senator for Queensland', 'Nathan Lambert MP', 'Newcastle Greens', 'Northern Land Council', 'NSW Nationals for Murray', 'Oxfam', 'Patrick Gorman MP', 'Peta Murphy MP Federal Member for Dunkley', 'Reconciliation NSW', 'Russell Broadbent MP', 'Sam Lim MP', 'Senator Anne Urquhart', 'Senator Anthony Chisholm', 'Senator Jess Walsh', 'Sheena Watt MP', 'South Australian Labor', 'Yes23']
@@ -223,32 +236,46 @@ con.close()
 
 records = []
 
-for entry in entries[:2]:
-    print(entry)
+for entry in entries:
 
-    ad_id = entry[0]
-    advertiser_id = entry[1]
-    name = entry[3]
-    texto = entry[4]
+    try:
+        # print(entry)
 
-    body = texto.encode("ascii", "ignore")
-    body = body.decode(encoding='utf-8')
-    body = body.lower()
+        ad_id = entry[0]
+        advertiser_id = entry[1]
+        name = entry[3]
+        texto = entry[4]
 
-    body_nlped = nlp(body)
+        if texto != None:
 
-    print(body_nlped)
+            body = texto.encode("ascii", "ignore")
+            body = body.decode(encoding='utf-8')
 
-    result = matcher(phrase_matcher, body_nlped)
 
-    print(result)
+            classification = classifier(texto)[0]['label']
 
-    if name in advertisers:
-        stance = stance_dicto[name]
-    else: 
-        stance = ''
+            print(classification)
 
-    records.append({"Ad_id": ad_id, "Advertiser": advertiser_id,"Name": name, "Keywords": result, "Advertiser_stance": stance, "Text": texto})
+            body = body.lower()
+
+            body_nlped = nlp(body)
+
+            # print(body_nlped)
+
+            result = matcher(phrase_matcher, body_nlped)
+
+            # print(result)
+
+            if name in advertisers:
+                stance = stance_dicto[name]
+            else: 
+                stance = ''
+
+            records.append({"Ad_id": ad_id, "Advertiser": advertiser_id,"Name": name, "Keywords": result, "Advertiser_stance": stance, "Text": texto, "Classifier": classification})
+
+    except RuntimeError:
+        print("RuntimeError")
+        continue
 
 # %%
 
@@ -256,3 +283,5 @@ cat = pd.DataFrame.from_records(records)
 
 pp(cat)
 # %%
+
+dumper('process/inter', 'modelled_test', cat)
