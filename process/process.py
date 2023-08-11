@@ -236,8 +236,11 @@ con.close()
 
 records = []
 
+counter = 0
 for entry in entries:
-
+    counter += 1
+    if counter % 50 == 0:
+        print(counter)
     try:
         # print(entry)
 
