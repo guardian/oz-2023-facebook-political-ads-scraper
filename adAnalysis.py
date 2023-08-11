@@ -26,10 +26,10 @@ checkWords = ['parliament',
               'recognition',
               'yes23',
               'thomas mayo', # supports yes, but in no attack ads
+              'thomas mayor', # alternate spelling of thomas mayo
               'mayo',
               'teela reid', # supports yes, but in no attack ads
               'reid',
-              'labor',
               'first nations',
               'voice'
               'voteno',
@@ -47,9 +47,14 @@ checkWords = ['parliament',
               'Eddie Synot', # yes
               'Megan Davis', # yes 
               'racist',
-              'uluru'
+              'uluru',
+              'marcia langton', # yes
+              'HistoryIsCalling' # yes
               ]
 
+antiWords = ['candidate',
+             'make your voice heard'
+             ]
 
 
 fromPages = ['102329728050606', # yes23
@@ -71,8 +76,10 @@ fromPages = ['102329728050606', # yes23
 # News and other pages that are by definition 'neutral'
 
 neutralPages = [
-     '8013404017', # Crikey
-     '110627000000000' # Australian government
+    '8013404017', # Crikey
+    '110627000000000', # Australian government
+    '92701406946', #Adelaide advertiser
+    '45388134977' # the australian
 ]
 
 # Yes pages
@@ -84,7 +91,10 @@ neutralPages = [
 
 excludes = [
     '425488000000000', # First Peoples' Assembly of Victoria will show up with our classifier but ads relate to Vic-specific treaty negotiations
+    '103260000000000', # SA government ads are about state voice
+    '113083000000000' # About SA voice
 ]
+
 
 # Page name is actually the easiest identifier for whether an ad will be yes, no or neutral on the voice
 
