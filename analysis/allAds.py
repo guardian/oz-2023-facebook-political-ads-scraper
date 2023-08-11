@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+#%%
 import pandas as pd
 
 tagged = pd.read_excel('https://docs.google.com/spreadsheets/d/e/2PACX-1vTACLNmVRNPXzaNpMohWwwQwRM9VEDgCPJRHMAL2yLaZnLRApPfGpBFbJOj7Mmsow0s3yBKxsOk5OoC/pub?output=xlsx', sheet_name='tagged')
@@ -61,6 +61,11 @@ ads['voice_ad'] = ads.apply(returnVoice, axis=1)
 
 ads['side'] = ads.apply(returnSide, axis=1)
 
+
+#%%
+ads = ads.drop_duplicates(subset='concat_text')
+ads.to_csv('training-ads.csv', index=False, encoding="utf-8")
+
 #%%
 
 voice_ads = ads[ads['voice_ad'] == 1]
@@ -71,6 +76,9 @@ side_gp = voice_ads[['count', 'side', 'spend_upper']].groupby(['side']).sum()
 #%%
 
 page_gp = voice_ads[['count', 'side','page_name', 'spend_upper']].groupby(['page_name', 'side']).sum()
+
+#%%
+
 
 
 
