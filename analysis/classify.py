@@ -8,13 +8,26 @@ import numpy as np
 from collections import Counter
 import os 
 import time
-import spacy
+
 import re
 
-nlp = spacy.load('en_core_web_sm')
+# import spacy
+# nlp = spacy.load('en_core_web_sm')
+# from spacy.matcher import PhraseMatcher
+# voice_matcher = PhraseMatcher(nlp.vocab)
+# associated_matcher = PhraseMatcher(nlp.vocab)
+
+
+### New spacy api
+
+from spacy.lang.en import English
+nlp = English()
 from spacy.matcher import PhraseMatcher
-voice_matcher = PhraseMatcher(nlp.vocab)
-associated_matcher = PhraseMatcher(nlp.vocab)
+
+voice_matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
+associated_matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
+
+
 from transformers import AutoTokenizer
 tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
 
@@ -124,7 +137,7 @@ keywords_voice = [
 	'voice to parliament', 
 	'canberra voice', 
 	'voice referendum',
-	'referendum on the voice'
+	'referendum on the voice',
 	'the voice',
 	'yes23',
 	'uluru voice',
@@ -262,6 +275,7 @@ def addOtherKeywords(row):
 
 df['other_keywords'] = df.apply(addOtherKeywords, axis=1)
 
+pp(df)
 
 #%%
 
