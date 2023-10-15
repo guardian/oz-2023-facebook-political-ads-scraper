@@ -1,8 +1,9 @@
+#%%
 import scraperwiki
 import pandas as pd 
 from sudulunu.helpers import pp, make_num, dumper
 import numpy as np 
-
+import ast
 from collections import Counter
 import os 
 import time
@@ -11,14 +12,10 @@ import re
 
 nlp = spacy.load('en_core_web_sm')
 from spacy.matcher import PhraseMatcher
-phrase_matcher = PhraseMatcher(nlp.vocab)
+voice_matcher = PhraseMatcher(nlp.vocab)
+associated_matcher = PhraseMatcher(nlp.vocab)
 from transformers import AutoTokenizer
 tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
-
-# from transformers import pipeline
-# ## Zero shot classifer
-# classifier = pipeline("zero-shot-classification",
-#                       model="facebook/bart-large-mnli")
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from transformers import pipeline
@@ -26,9 +23,6 @@ from transformers import pipeline
 classifier = pipeline("text-classification", model="Joshnicholas/ad-classifier")
 
 data = pd.read_excel("process/inter/labelled.xlsx", sheet_name='Sheet1')
-# 'Unnamed: 0', 'voice_ad', 'side', 'ad_id', 'page_id', 'query', 'page_name', 
-# 'ad_creative_bodies', 'ad_creative_link_titles', 'ad_creative_link_captions', 
-# 'ad_creative_link_descriptions', 'ad_snapshot_url'
 
 stance_dicto = {}
 
@@ -41,7 +35,7 @@ copier = data.copy()
 copier = copier.loc[copier['voice_ad'] == 1].copy()
 advertisers = copier['page_name'].unique().tolist()
 
-print(len(advertisers))
+# print(len(advertisers))
 
 for addo in advertisers:
     # print(countess)
@@ -82,18 +76,8 @@ for addo in advertisers:
         other.append(addo)
         stance_dicto[addo] = 'other'   
 
-# print("yes_campaign = ", yes_campaign)
-# print("no_campaign = ", no_campaign)
-# print("no_stance_taken = ", no_stance_taken)
-# print("other = ", other)
-
-# print("len(yes_campaign): ", len(yes_campaign))
-# print("len(no_campaign): ", len(no_campaign))
-# print("len(no_stance_taken): ", len(no_stance_taken))
-# print("len(other): ", len(other))
-
-
-def prep_words(lister):
+#%%
+def prep_words(phrase_matcher, lister):
     ## Ensure strings
     words = [str(x).lower() for x in lister]
     # print(words)
@@ -101,7 +85,7 @@ def prep_words(lister):
     ## Create phrase list for searching
 
     patterns = [nlp(x) for x in words]
-    # print(patterns)
+    print(patterns)
 
     phrase_matcher.add('AI', None, *patterns)
 
@@ -109,7 +93,7 @@ def prep_words(lister):
 
     return phrase_matcher
 
-
+#%%
 def matcher(matcher_matcher, texto):
 
     matches = []
@@ -135,22 +119,35 @@ def matcher(matcher_matcher, texto):
     return matches
     # print(matches)
 
-keywords = ['parliament', 
-              'canberra', 
-              'constitution', 
+keywords_voice = [
+	'voice to parliament', 
+	'canberra voice', 
+	'voice referendum',
+	'referendum on the voice',
+	'yes23',
+	'uluru voice',
+	'voteyes',
+	'yes campaign',
+	'no campaign'
+	]
+
+keywords_associated = [
+              'constitution',
+			  'Australia Day',
+			  'vote',
+			  'yes',
+			  'the voice',
+			  'no', 
               'indigenous',
               'aborigin',
-              'albanese',
               'albo',
               'referendum',
               'treaty',
               'recognition',
-              'yes23',
               'thomas mayo', # supports yes, but in no attack ads
               'mayo',
               'teela reid', # supports yes, but in no attack ads
               'reid',
-              'labor',
               'first nations',
               'voice'
               'voteno',
@@ -168,10 +165,17 @@ keywords = ['parliament',
               'Eddie Synot', # yes
               'Megan Davis', # yes 
               'racist',
-              'uluru'
+              'uluru',
+			   'risky',
+			   'divide',
+			   'divisive',
+			   'executive government',
+			   'runforthevoice',
+			   'UluruStatement'
               ]
 
-phrase_matcher = prep_words(keywords)
+voice_matcher = prep_words(voice_matcher, keywords_voice)
+keyword_matcher = prep_words(associated_matcher, keywords_associated)
 
 fromPages = [102329728050606, # yes23
              104180525925926, # fair australia
@@ -183,11 +187,33 @@ fromPages = [102329728050606, # yes23
              103072892843066, # not my voice
              112239124719864, # gen united
              109657605474040, # multicultural voices against the voice
-             131283957610666, # AJA
+             # 131283957610666, # AJA
              117058357932949, # constitutional equality
              1407150000000000, # empowered communities
-             102330000000000 # From the heart
+             102330000000000, # From the heart
+             108867585639273 # save aus day
              ]
+
+excludes = [
+	196790584582115, # SA Parliament
+    425487554863185, # First Peoples' Assembly of Victoria will show up with our classifier but ads relate to Vic-specific treaty negotiations
+    103259978010848, # SA government ads are about state voice
+    113083368051071, # About SA voice
+    92701406946, # Adelaide advertiser
+    102109782192228, # SA MPs
+    418071004886444,# SA MPs
+    427125817373739,# SA MPs
+    355298382062737,# SA MPs
+    102666592438533,# SA MPs
+    684088031625250,# SA MPs
+    325495831575,# SA MPs
+    260688477704228,
+    799356113528515
+]
+
+
+
+#%%
 
 def checkPages(page_id):
     result = None
@@ -196,53 +222,158 @@ def checkPages(page_id):
     return result    
 
 def classifyAd(text):
-    text = tokenizer(text, truncation=True)
+	# text = tokenizer(text, truncation=True)
+    text = text[:512]
     classification = classifier(text)[0]['label']
     return classification
-
-def checkKeywords(text):
+#%%
+def checkVoiceKeywords(text):
     body = text.encode("ascii", "ignore")
     body = body.decode(encoding='utf-8')
     body = body.lower()
     body_nlped = nlp(body)
-    result = matcher(phrase_matcher, body_nlped)
+    result = matcher(voice_matcher, body_nlped)
     return result
 
+def checkOtherKeywords(text):
+    body = text.encode("ascii", "ignore")
+    body = body.decode(encoding='utf-8')
+    body = body.lower()
+    body_nlped = nlp(body)
+    result = matcher(associated_matcher, body_nlped)
+    return result
+
+def scoreCounter(score, addition):
+	new_score = score + addition
+	if new_score >= 100:
+		new_score = 100
+		return new_score
+	else:
+		return new_score
+
+def algo(voice_ad_classified, voice_keywords, other_keywords, page_id, concat_text):
+	
+	# Generate a score out of 100 for voice ad confidence	
+	
+	score = 0
+	page_id = int(page_id)
+	classified = False
+	
+	if voice_ad_classified == 'Is a Voice ad':
+		classified = True
+
+	is_known_page = False
+	# print(type(page_id))
+	if page_id in fromPages:
+		is_known_page = True
+		
+	is_excluded_page = False
+	
+	if page_id in excludes:
+		is_excluded_page = True
+	
+	if pd.notnull(concat_text):
+		print(concat_text)
+		if "Voice" in concat_text:
+			score = scoreCounter(score, 10)
+	
+	if is_known_page:
+		score = scoreCounter(score, 90)
+	
+	if classified:
+		score = scoreCounter(score, 50)
+	
+	if other_keywords:
+		if (type(other_keywords) is not list):			
+			other_keywords = ast.literal_eval(other_keywords)
+		words = len(other_keywords)
+		score = scoreCounter(score, words * 10)
+		
+	if voice_keywords:
+		print(voice_keywords)
+		score = scoreCounter(score, 70)	
+	
+	if is_excluded_page:
+		score = 0
+	# print(score)	
+	return score	
 # Run the classifier and keyword matcher over the database
 
-# queryString = "* from ads_by_query"
-# queryResult = scraperwiki.sqlite.select(queryString)
+queryString = "* from ads_by_query WHERE voice_ad_modelled IS NULL"
+queryResult = scraperwiki.sqlite.select(queryString)
 
-# for row in queryResult:
-#     if row['concat_text']:
-#         body = row['concat_text'].encode("ascii", "ignore")
-#         body = body.decode(encoding='utf-8')
-#         print(row['ad_id'])
-#         classification = classifier(row['concat_text'][:512])[0]['label']
+print(len(queryResult), "rows to classify")
+for row in queryResult:
+    if row['concat_text']:
 
-#         print(classification)
+        print(row['ad_id'])
+        try:
+            classification = classifyAd(row['concat_text'])
+        except:
+            classification = "error"
+            
+        print(classification)
 
-#         body = body.lower()
+        voice_keywords = checkVoiceKeywords(row['concat_text'])
+        other_keywords = checkOtherKeywords(row['concat_text'])
 
-#         body_nlped = nlp(body)
+        if row['page_name'] in advertisers:
+            stance = stance_dicto[row['page_name']]
+        else: 
+            stance = None
 
-#         # print(body_nlped)
+        row['voice_ad_modelled'] = classification
+        row['side_inferred'] = stance
+        
+        score = algo(classification, voice_keywords, other_keywords, row['page_id'], row['concat_text'])
+        row['score'] = score
+        print(score)
+        scraperwiki.sqlite.save(unique_keys=["ad_id"], data=row, table_name="ads_by_query")
+        time.sleep(0.1)
+    else:
+        if row['page_id'] in fromPages:
+              row['score'] = 90
+        if row['page_name'] in advertisers:
+            stance = stance_dicto[row['page_name']]
+        else: 
+            stance = None
+        row['side_inferred'] = stance
+        scraperwiki.sqlite.save(unique_keys=["ad_id"], data=row, table_name="ads_by_query")
+        time.sleep(0.1)          
 
-#         result = matcher(phrase_matcher, body_nlped)
+# for page_id in fromPages:
+#     queryString = f"* from ads_by_query WHERE page_id = {page_id}"
+#     queryResult = scraperwiki.sqlite.select(queryString)
 
-#         print(result)
+#     for row in queryResult:
+#         print(row['page_id'])
+#         if row['concat_text']:
+#             print(row['ad_id'])
+#             classification = classifyAd(row['concat_text'])
+#             print(classification)
 
-#         if row['page_name'] in advertisers:
-#             stance = stance_dicto[row['page_name']]
-#         else: 
-#             stance = None
+#             voice_keywords = checkVoiceKeywords(row['concat_text'])
+#             other_keywords = checkOtherKeywords(row['concat_text'])
 
-#         row['voice_ad_modelled'] = classification
-#         row['side_inferred'] = stance
-#         row['voice_ad_keywords'] = str(result)
-#         voice_advertiser = False
-#         if row['page_id'] in fromPages:
-#             voice_advertiser = True
-#         row['voice_advertiser'] = voice_advertiser
-#         scraperwiki.sqlite.save(unique_keys=["ad_id"], data=row, table_name="ads_by_query")
-#         time.sleep(0.1)
+#             if row['page_name'] in advertisers:
+#                 stance = stance_dicto[row['page_name']]
+#             else: 
+#                 stance = None
+
+#             row['voice_ad_modelled'] = classification
+#             row['side_inferred'] = stance
+            
+#             score = algo(classification, voice_keywords, other_keywords, row['page_id'], row['concat_text'])
+#             row['score'] = score
+#             print(score)
+#             scraperwiki.sqlite.save(unique_keys=["ad_id"], data=row, table_name="ads_by_query")
+#             time.sleep(0.1)
+#         else:
+#             row['score'] = 90
+#             if row['page_name'] in advertisers:
+#                 stance = stance_dicto[row['page_name']]
+#             else: 
+#                 stance = None
+#             row['side_inferred'] = stance
+#             scraperwiki.sqlite.save(unique_keys=["ad_id"], data=row, table_name="ads_by_query")
+#             time.sleep(0.1)         

@@ -96,11 +96,14 @@ def savePosts(resultsJson, pageID):
 # 		print(result)
 		
 		data = {}
-		
 		data['ad_id'] = result['id']
-		data['page_id'] = pageID
-		data['page_name'] = result['page_name']
-
+		
+		if 'page_id' in result:
+			data['page_id'] = pageID
+		
+		if 'page_name' in result:	
+			data['page_name'] = result['page_name']
+		
 		if 'ad_creative_bodies' in result:
 			data['ad_creative_bodies'] = ' '.join(result['ad_creative_bodies'])
 
@@ -108,16 +111,16 @@ def savePosts(resultsJson, pageID):
 			data['ad_delivery_start_time'] = result['ad_delivery_start_time']
 		
 		if 'ad_creative_link_captions' in result:
-			data['ad_creative_link_captions'] = result['ad_creative_link_captions']
+			data['ad_creative_link_captions'] = str(result['ad_creative_link_captions'])
 
 		if 'ad_creative_link_descriptions' in result:
-			data['ad_creative_link_descriptions'] = result['ad_creative_link_descriptions']
+			data['ad_creative_link_descriptions'] = str(result['ad_creative_link_descriptions'])
 
 		if 'ad_delivery_stop_time' in result:
 			data['ad_delivery_stop_time'] = result['ad_delivery_stop_time']
 
 		if 'ad_creative_link_titles' in result:
-			data['ad_creative_link_titles'] = result['ad_creative_link_titles']	
+			data['ad_creative_link_titles'] = str(result['ad_creative_link_titles'])
 	
 		if 'bylines' in result:
 			data['bylines'] = result['bylines']
@@ -132,7 +135,7 @@ def savePosts(resultsJson, pageID):
 				data['impressions_lower'] = result['impressions']['lower_bound']
 			if 'upper_bound' in result['impressions']: 	
 				data['impressions_upper'] = result['impressions']['upper_bound']
-		data['ad_snapshot_url'] = result['ad_snapshot_url']
+		data['ad_snapshot_url'] = f"https://www.facebook.com/ads/library/?id={result['id']}"
 	
 		if 'demographic_distribution' in result:
 			demos = getDemos(result['demographic_distribution'])
@@ -161,9 +164,9 @@ def savePosts(resultsJson, pageID):
 	
 		time.sleep(0.2)
 
-def getPosts(pageID,since):
+def getPosts(pageID,since, fields):
 	print("Getting", pageID)
-	query = f'https://graph.facebook.com/v17.0/ads_archive?access_token={key}&fields=id,page_id,page_name,ad_creative_bodies,ad_creative_link_captions,ad_creative_link_descriptions,ad_creative_link_titles,ad_delivery_start_time,ad_delivery_stop_time,bylines,demographic_distribution,spend,currency,delivery_by_region,impressions,ad_snapshot_url&search_page_ids={pageID}&aad_type=POLITICAL_AND_ISSUE_ADS&ad_reached_countries=[%27AU%27]&limit=2000&ad_delivery_date_min={since}'
+	query = f'https://graph.facebook.com/v17.0/ads_archive?access_token={key}&fields={fields}&search_page_ids={pageID}&ad_type=POLITICAL_AND_ISSUE_ADS&ad_reached_countries=[%27AU%27]&limit=1000&ad_delivery_date_min={since}'
 	print(query)
 	global queryCount
 	queryCount += 1
@@ -207,8 +210,9 @@ def getPosts(pageID,since):
 
 
 upto = 0
-initialSinceDate = "2023-01-01"
-pages = ['102329728050606', '104180525925926', '117806591312470', '1622506634677043', '113998151684022','363375540400009', '102292348146435', '103072892843066']
+initialSinceDate = "2023-09-26"
+pages = ['102329728050606', '104180525925926', '117806591312470', '1622506634677043', '113998151684022','363375540400009', '102292348146435', '103072892843066', '108867585639273']
+# pages = ['1622506634677043']
 # pages2 = []
 
 
@@ -218,10 +222,14 @@ pages = ['102329728050606', '104180525925926', '117806591312470', '1622506634677
 # 292602604891 - Josh Frydenberg
 
 # https://www.facebook.com/ads/library/?id=992360535298100
+fields = 'id,page_id,page_name,ad_creative_bodies,ad_creative_link_captions,ad_creative_link_descriptions,ad_creative_link_titles,ad_delivery_start_time,ad_delivery_stop_time,bylines,demographic_distribution,spend,currency,delivery_by_region,impressions'
 
 for x in range(upto, len(pages)):
- 	print("Upto", x)
-	getPosts(pages[x],initialSinceDate)
+	print("Upto", x)
+	getPosts(pages[x],initialSinceDate, fields)
+
+from utilities import concatText
+concatText()	
  	
 
 

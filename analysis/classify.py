@@ -77,7 +77,7 @@ for addo in advertisers:
         other.append(addo)
         stance_dicto[addo] = 'other'   
 
-
+#%%
 def prep_words(phrase_matcher, lister):
     ## Ensure strings
     words = [str(x).lower() for x in lister]
@@ -86,7 +86,7 @@ def prep_words(phrase_matcher, lister):
     ## Create phrase list for searching
 
     patterns = [nlp(x) for x in words]
-    # print(patterns)
+    print(patterns)
 
     phrase_matcher.add('AI', None, *patterns)
 
@@ -94,7 +94,7 @@ def prep_words(phrase_matcher, lister):
 
     return phrase_matcher
 
-
+#%%
 def matcher(matcher_matcher, texto):
 
     matches = []
@@ -124,8 +124,7 @@ keywords_voice = [
 	'voice to parliament', 
 	'canberra voice', 
 	'voice referendum',
-	'referendum on the voice'
-	'the voice',
+	'referendum on the voice',
 	'yes23',
 	'uluru voice',
 	'voteyes',
@@ -133,17 +132,19 @@ keywords_voice = [
 	'no campaign'
 	]
 
-keywords_associated = ['voice to parliament', 
-              'canberra voice', 
-              'constitution', 
+keywords_associated = [
+              'constitution',
+			  'Australia Day',
+			  'vote',
+			  'yes',
+			  'the voice',
+			  'no', 
               'indigenous',
               'aborigin',
-              'albanese',
               'albo',
               'referendum',
               'treaty',
               'recognition',
-              'yes23',
               'thomas mayo', # supports yes, but in no attack ads
               'mayo',
               'teela reid', # supports yes, but in no attack ads
@@ -165,7 +166,13 @@ keywords_associated = ['voice to parliament',
               'Eddie Synot', # yes
               'Megan Davis', # yes 
               'racist',
-              'uluru'
+              'uluru',
+			   'risky',
+			   'divide',
+			   'divisive',
+			   'executive government',
+			   'runforthevoice',
+			   'UluruStatement'
               ]
 
 voice_matcher = prep_words(voice_matcher, keywords_voice)
@@ -207,7 +214,7 @@ def classifyAd(text):
     text = text[:512]
     classification = classifier(text)[0]['label']
     return classification
-
+#%%
 def checkVoiceKeywords(text):
     body = text.encode("ascii", "ignore")
     body = body.decode(encoding='utf-8')
@@ -227,6 +234,8 @@ def checkOtherKeywords(text):
 #%%
 
 df = pd.read_csv('training-ads.csv')
+
+df = df[df['page_name'] == "Yes23"]
 
 #%%
 def addCheckPages(row):
@@ -280,10 +289,91 @@ df['other_keywords'] = df.apply(addOtherKeywords, axis=1)
 # 		return  "Other"	
 
 # df['check_keys'] = df.apply(checkKeys, axis=1)	
+import ast
+
+def scoreCounter(score, addition):
+	new_score = score + addition
+	if new_score >= 100:
+		new_score = 100
+		return new_score
+	else:
+		return new_score
+
+def algo(voice_ad_classified, voice_keywords, page_id, other_keywords, concat_text):
+	
+	# Generate a score out of 100 for voice ad confidence	
+	
+	score = 0
+	
+	classified = False
+	
+	if voice_ad_classified == 'Is a Voice ad':
+		classified = True
+
+	is_known_page = False
+	if page_id in fromPages:
+		is_known_page = True
+		
+	is_excluded_page = False
+	if page_id in excludes:
+		is_excluded_page = True
+	
+	if pd.notnull(concat_text):
+		print(concat_text)
+		if "Voice" in concat_text:
+			score = scoreCounter(score, 10)
+	
+	if is_known_page:
+		score = scoreCounter(score, 90)
+	
+	if classified:
+		score = scoreCounter(score, 50)
+	
+	if other_keywords:
+		if (type(other_keywords) is not list):			
+			other_keywords = ast.literal_eval(other_keywords)
+		words = len(other_keywords)
+		score = scoreCounter(score, words * 10)
+		
+	if voice_keywords:
+		print(voice_keywords)
+		score = scoreCounter(score, 70)	
+	
+	if is_excluded_page:
+		score = 0
+	print(score)	
+	return score	
+
+
+def addScore(row):
+	score = algo(row['voice_ad_classified'], row['voice_keywords'], row['page_id'], row['other_keywords'], row['concat_text'])
+	return score
+
+
+
+df['score'] = df.apply(addScore, axis=1)
+
 
 #%%
 
-df.to_excel('temp-check-keywords.xlsx', index=False, encoding='utf-8')
+df['algo'] = False
+df.loc[df['score'] > 50, 'algo'] = True
+df['count'] = 1
+algo_rating = df[['voice_ad', 'algo', 'count']].groupby(['voice_ad', 'algo']).sum()
+algo_rating['pct'] = algo_rating['count'] / algo_rating.groupby('voice_ad')['count'].transform('sum')
+
+remainder = df[(df['voice_ad'] == 1) & (df['algo'] == False)].to_csv('remainder.csv')
+pickups = df[(df['voice_ad'] == 0) & (df['algo'] == True)].to_csv('pickups.csv')
+
+#%%
+
+model_rating = df[['voice_ad', 'voice_ad_classified', 'count']].groupby(['voice_ad', 'voice_ad_classified']).sum()
+model_rating['pct'] = model_rating['count'] / model_rating.groupby('voice_ad')['count'].transform('sum')
+
+
+#%%
+
+
 
 
 #%%

@@ -92,14 +92,15 @@ def dictiFy(state_list):
 
 def savePosts(resultsJson, query):
 	for result in resultsJson['data']:
-# 		print(result)
+		print(result)
 		
 		data = {}
 		
 		data['ad_id'] = result['id']
 		data['page_id'] = result['page_id']
 		data['query'] = query
-		data['page_name'] = result['page_name']
+		if 'page_name' in result:
+			data['page_name'] = result['page_name']
 
 		if 'ad_creative_bodies' in result:
 			data['ad_creative_bodies'] = ' '.join(result['ad_creative_bodies'])
@@ -156,7 +157,7 @@ def savePosts(resultsJson, query):
 			if 'upper_bound' in result['estimated_audience_size']:
 				data['estimated_audience_size_upper'] = result['estimated_audience_size']['upper_bound']
 
-		print(data)	
+		# print(data)	
 
 		scraperwiki.sqlite.save(unique_keys=["ad_id"], data=data, table_name='ads_by_query')
 	
@@ -165,7 +166,7 @@ def savePosts(resultsJson, query):
 def getPosts(query,since):
 	print(f"Getting ads related to {query}")
 
-	url = f"https://graph.facebook.com/v17.0/ads_archive?access_token={key}&fields=id,page_id,page_name,ad_creative_bodies,ad_creative_link_captions,ad_creative_link_descriptions,ad_creative_link_titles,ad_delivery_start_time,ad_delivery_stop_time,bylines,demographic_distribution,spend,currency,delivery_by_region,impressions,ad_snapshot_url&aad_type=POLITICAL_AND_ISSUE_ADS&ad_reached_countries=[%27AU%27]&limit=200&ad_delivery_date_min={since}&search_terms='{query}'"
+	url = f"https://graph.facebook.com/v17.0/ads_archive?access_token={key}&fields=id,page_id,page_name,ad_creative_bodies,ad_creative_link_captions,ad_creative_link_descriptions,ad_creative_link_titles,ad_delivery_start_time,ad_delivery_stop_time,bylines,demographic_distribution,spend,currency,delivery_by_region,impressions,ad_snapshot_url&ad_type=POLITICAL_AND_ISSUE_ADS&ad_reached_countries=[%27AU%27]&limit=200&ad_delivery_date_min={since}&search_terms='{query}'"
 
 	print(url)
 	global queryCount
@@ -209,15 +210,18 @@ def getPosts(query,since):
 #%%
 
 upto = 0
-initialSinceDate = "2023-01-01"
+initialSinceDate = "2023-09-27"
+# initialToDate = "2023-08-21"
 
 # 331204223675563 - United Australia Party
 # 316480331783930 - Australian Unions
 
 # 292602604891 - Josh Frydenberg
 
-queries = ["the voice"]
+queries = ["voice", "referendum", 'canberra voice']
 
 for query in queries:
 	getPosts(query, initialSinceDate)
 
+# from utilities import concatText
+# concatText()
