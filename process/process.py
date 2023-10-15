@@ -255,7 +255,10 @@ for entry in entries:
             body = body.decode(encoding='utf-8')
 
 
-            classification = classifier(texto)[0]['label']
+            tokenizer_kwargs = {'padding':True,'truncation':True,'max_length':512}
+            classification = classifier(texto,**tokenizer_kwargs)[0]['label']
+
+            # classification = classifier(texto)[0]['label']
 
             print(classification)
 
